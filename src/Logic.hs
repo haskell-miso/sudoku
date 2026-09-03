@@ -7,6 +7,7 @@ module Logic where
 import           Data.Bits ((.|.), (.&.), complement, popCount, setBit, shiftL, testBit)
 import qualified Data.IntMap.Strict as IM
 import           Data.List (delete, minimumBy, sortOn)
+import           Data.Maybe (isJust)
 import           Data.Ord (comparing)
 -----------------------------------------------------------------------------
 import           Miso.Random (replicateRM)
@@ -166,6 +167,20 @@ conflicted vs =
   | (i, Just v) <- zip [0 ..] vs
   , any (\j -> vs !! j == Just v) (peersOf i)
   ]
+-----------------------------------------------------------------------------
+-- | Boxes whose nine cells are filled and free of visible conflicts —
+-- graded without consulting the hidden solution, so a full clash-free
+-- box holds each digit exactly once.
+completedBoxes :: [Maybe Int] -> [Int]
+completedBoxes vs =
+  [ b
+  | b <- [0 .. 8]
+  , let ixs = [ i | i <- [0 .. 80], boxOf i == b ]
+  , all (\i -> isJust (vs !! i)) ixs
+  , all (`notElem` conf) ixs
+  ]
+  where
+    conf = conflicted vs
 -----------------------------------------------------------------------------
 -- | A full, valid solution grid?
 validSolution :: [Int] -> Bool

@@ -345,6 +345,7 @@ boardView m = H.div_ [ HP.class_ "sboard" ]
       i <- sel
       ((m ^. cells) !! i) ^. value
     conf = conflicted (map (^. value) (m ^. cells))
+    doneBoxes = completedBoxes (map (^. value) (m ^. cells))
     alt = odd (m ^. animSeq)
     won = m ^. phase == Won
     cellView i = H.div_
@@ -372,6 +373,7 @@ boardView m = H.div_ [ HP.class_ "sboard" ]
           , clsWhen (sel == Just i) "sel"
           , clsWhen (isPeer && not won) "peer"
           , clsWhen (isJust v && v == selVal && sel /= Just i && not won) "same"
+          , clsWhen (boxOf i `elem` doneBoxes && not won) "boxDone"
           , clsWhen (m ^. shakeIx == Just i) "shakeC"
           , clsWhen (m ^. shakeIx == Just i && alt) "alt"
           , clsWhen won "winWave"

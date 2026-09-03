@@ -59,6 +59,24 @@ main = do
     (conflicted (dup knownPuzzle) /= [])
   check "no conflicts in a legal puzzle" (null (conflicted knownPuzzle))
   check "formatTime pads" (formatTime 65 == "01:05" && formatTime 600 == "10:00")
+  check "no box is complete in the classic puzzle"
+    (null (completedBoxes knownPuzzle))
+  case generate (lcg 1) Easy of
+    Nothing -> check "generates a grid for box completion tests" False
+    Just (sol, _) -> do
+      check "a full valid grid completes every box"
+        (completedBoxes (map Just sol) == [0 .. 8])
+      check "one correctly filled box is complete"
+        (completedBoxes
+          [ if boxOf i == 4 then Just v else Nothing
+          | (i, v) <- zip [0 ..] sol
+          ] == [4])
+      check "a full box with an internal duplicate is not complete"
+        (let swap i = if boxOf i == 4 && sol !! i == sol !! 30 then sol !! 31 else sol !! i
+         in null (completedBoxes
+              [ if boxOf i == 4 then Just (swap i) else Nothing
+              | (i, _) <- zip [0 :: Int ..] sol
+              ]))
 
   n <- readIORef failures
   if n == 0

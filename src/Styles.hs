@@ -164,6 +164,11 @@ skin = sheet_
   , selector_ ".scell.peer" [ CSS.backgroundColor (RGBA 36 48 78 0.05) ]
   , selector_ ".scell.same"
       [ CSS.backgroundColor (RGBA 36 48 78 0.14), CSS.fontWeight "800" ]
+  -- a completed 3x3 box: gold wash layered over the other tints
+  , selector_ ".scell.boxDone"
+      [ "background-image" =: "linear-gradient(rgba(201,158,63,.16), rgba(201,158,63,.16))"
+      , CSS.animation "boxDoneIn .7s ease"
+      ]
   , selector_ ".scell.sel"
       [ CSS.backgroundColor (RGBA 36 48 78 0.10)
       , CSS.boxShadow "inset 0 0 0 2px #24304E"
@@ -613,6 +618,10 @@ skin = sheet_
       [ from_ [ CSS.backgroundColor (RGBA 199 62 58 0.0) ]
       , at (pct 40) [ CSS.backgroundColor (RGBA 199 62 58 0.28) ]
       , to_ [ CSS.backgroundColor (RGBA 199 62 58 0.0) ]
+      ]
+  , keyframes_ "boxDoneIn"
+      [ from_ [ CSS.backgroundColor (RGBA 201 158 63 0.45) ]
+      , to_ [ CSS.backgroundColor (RGBA 201 158 63 0.0) ]
       ]
   , keyframes_ "stampIn"
       [ from_ [ CSS.transform "scale(2.1) rotate(-20deg)", CSS.opacity 0 ]
