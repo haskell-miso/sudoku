@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no, viewport-fit=cover">
+
+    <title>Sudoku — Free Online Puzzle · Miso Sudoku</title>
+    <meta name="description" content="Play sudoku free in your browser. Four difficulties, every puzzle generated with exactly one solution. Pencil notes, hints, undo, mistake tracking. No ads, no download, works on mobile.">
+    <link rel="canonical" href="https://sudoku.haskell-miso.org/">
+    <meta name="theme-color" content="#0f4736">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔢</text></svg>">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Miso Sudoku">
+    <meta property="og:title" content="Sudoku — Free Online Puzzle">
+    <meta property="og:description" content="Four difficulties, every puzzle has exactly one solution. Pencil notes, hints, undo. Free, no ads, works on mobile.">
+    <meta property="og:url" content="https://sudoku.haskell-miso.org/">
+    <meta property="og:image" content="https://sudoku.haskell-miso.org/social.jpg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="The Miso Sudoku board">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Sudoku — Free Online Puzzle">
+    <meta name="twitter:description" content="Four difficulties, every puzzle has exactly one solution. Pencil notes, hints, undo. Free, no ads, works on mobile.">
+    <meta name="twitter:image" content="https://sudoku.haskell-miso.org/social.jpg">
+
+    <!-- Performance -->
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="modulepreload" href="index.js">
+    <link rel="modulepreload" href="ghc_wasm_jsffi.js">
+    <link rel="preload" href="app.wasm" as="fetch" crossorigin="anonymous">
+
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "VideoGame",
+      "name": "Miso Sudoku",
+      "url": "https://sudoku.haskell-miso.org/",
+      "image": "https://sudoku.haskell-miso.org/social.jpg",
+      "description": "Free online sudoku. Four difficulties, every puzzle generated with exactly one solution. Pencil notes, hints, undo, mistake tracking.",
+      "genre": ["Puzzle", "Logic game"],
+      "playMode": "SinglePlayer",
+      "gamePlatform": "Web browser",
+      "applicationCategory": "Game",
+      "operatingSystem": "Any",
+      "browserRequirements": "Requires JavaScript and WebAssembly",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD",
+        "availability": "https://schema.org/InStock"
+      },
+      "author": { "@type": "Person", "name": "David M. Johnson" }
+    }
+    </script>
+
+    <style>
+      html, body { margin: 0; padding: 0; background: #082b20; }
+      #loading {
+        position: fixed; inset: 0; display: flex; flex-direction: column;
+        align-items: center; justify-content: center; text-align: center;
+        gap: 10px; padding: 24px; color: #cfe0d5;
+        font-family: 'Avenir Next', 'Segoe UI', system-ui, sans-serif;
+        background:
+          radial-gradient(120% 90% at 50% 12%, rgba(255,255,255,.07), rgba(0,0,0,0) 55%),
+          radial-gradient(140% 120% at 50% 50%, #17604a 0%, #0f4736 48%, #082b20 100%);
+      }
+      #loading h1 {
+        margin: 0; color: #e8c96a; font-size: clamp(28px, 6vmin, 48px);
+        letter-spacing: .12em; font-weight: 800;
+      }
+      #loading p { max-width: 560px; line-height: 1.6; margin: 4px 0; font-size: 15px; }
+      #loading .dim { color: #7f9a8c; font-size: 13px; }
+      #loading .pulse { animation: lpulse 1.2s ease-in-out infinite; }
+      @keyframes lpulse { 0%, 100% { opacity: .45 } 50% { opacity: 1 } }
+    </style>
+  </head>
+
+  <body>
+    <div id="loading">
+      <h1>🔢 Sudoku</h1>
+      <p>Fill the 9×9 grid so every row, column, and 3×3 box contains the
+        digits 1 to 9 exactly once. Pick from four difficulties — easy,
+        medium, hard, and expert — with pencil notes, hints, unlimited
+        undo, and mistake tracking.</p>
+      <p>Every puzzle is generated with exactly one solution. Play free in
+        your browser. No ads, no downloads, mobile friendly.</p>
+      <p class="dim pulse">sharpening the pencil…</p>
+      <noscript><p><strong>Miso Sudoku requires JavaScript and
+        WebAssembly.</strong> Enable JavaScript to play.</p></noscript>
+    </div>
+
+    <script src="index.js" type="module"></script>
+
+  </body>
+</html>
