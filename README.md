@@ -13,12 +13,16 @@ to WebAssembly.
 - 🎲 Puzzles generated in the browser: a randomized full grid, then dug
   out cell by cell while a solution-counting solver proves **uniqueness**
 - 🎚 Easy / Medium / Hard / Expert (40 / 34 / 30 / 27 givens)
+- 🖐 Drag digits from the pad onto cells — or tap, or type
 - ✏️ Pencil notes with auto-sweep when a real digit lands nearby
-- 💡 Hints, unlimited undo, mistake tracking, per-digit remaining counts
+- 🔴 Honest grading: only *visible* clashes get the red pen — a digit
+  that merely disagrees with the hidden solution is left alone
+- 💡 Three hints per game, unlimited undo, per-digit remaining counts
 - ⌨️ Full keyboard play: 1–9, arrows, backspace, N for notes
 - 🔊 Sound effects synthesized live with the Web Audio API (zero assets)
-- ✨ The miso game-family look: felt table, ivory tiles, gold accents,
-  springy transitions — built on `Miso.Lens`, `Miso.CSS`, and
+- 🏮 "Ink & paper" design: a slab-serif paper puzzle sheet on an indigo
+  desk, printed givens vs. penciled entries, and a vermillion 正解 stamp
+  when you solve it — built on `Miso.Lens`, `Miso.CSS`, and
   `Miso.CSS.Color`
 
 ## Build (WASM)

@@ -22,7 +22,7 @@ import           Sound
 import           Styles (skin)
 -----------------------------------------------------------------------------
 main :: IO ()
-main = startApp defaultEvents app
+main = startApp (defaultEvents <> dragEvents) app
 -----------------------------------------------------------------------------
 app :: App Model Action
 app = (component initialModel updateModel viewModel)
@@ -115,20 +115,23 @@ updateModel = \case
 
   Hint -> do
     m <- get
-    when (m ^. phase == Playing) $ do
-      let fixable i =
-            let c = (m ^. cells) !! i
-            in not (c ^. given) && c ^. value /= Just ((m ^. solution) !! i)
-          target = case m ^. selected of
-            Just i | fixable i -> Just i
-            _ -> find fixable [0 .. 80]
-      case target of
-        Nothing -> playFx "deny"
-        Just i -> do
-          selected .= Just i
-          hintsUsed += 1
-          placeCorrect i ((m ^. solution) !! i)
-          playFx "draw"
+    when (m ^. phase == Playing) $
+      if m ^. hintsUsed >= hintLimit
+        then playFx "deny"
+        else do
+          let fixable i =
+                let c = (m ^. cells) !! i
+                in not (c ^. given) && c ^. value /= Just ((m ^. solution) !! i)
+              target = case m ^. selected of
+                Just i | fixable i -> Just i
+                _ -> find fixable [0 .. 80]
+          case target of
+            Nothing -> playFx "deny"
+            Just i -> do
+              selected .= Just i
+              hintsUsed += 1
+              placeCorrect i ((m ^. solution) !! i)
+              playFx "draw"
 
   Undo -> do
     m <- get
@@ -145,6 +148,28 @@ updateModel = \case
     let fresh = IS.toList (ks IS.\\ (m ^. heldKeys))
     heldKeys .= ks
     mapM_ (issueKey (m ^. showHelp)) fresh
+
+  DragStartD d -> do
+    m <- get
+    when (m ^. phase == Playing) (dragDigit .= Just d)
+
+  DragEndD -> do
+    dragDigit .= Nothing
+    dragOver .= Nothing
+
+  DragEnterC i -> do
+    m <- get
+    when (isJust (m ^. dragDigit)) (dragOver .= Just i)
+
+  DropOnC i -> do
+    m <- get
+    case m ^. dragDigit of
+      Just d | m ^. phase == Playing -> do
+        selected .= Just i
+        dragDigit .= Nothing
+        dragOver .= Nothing
+        enterDigit d
+      _ -> pure ()
 -----------------------------------------------------------------------------
 issueKey :: Bool -> Int -> Fx
 issueKey helpOpen k
@@ -182,25 +207,27 @@ enterDigit d = do
                 history %= ([(i, c)] :)
                 cells %= setCells [(i, c & value .~ Nothing)]
                 playFx "erase"
-            | (m ^. solution) !! i == d -> do
-                placeCorrect i d
-                playFx "clack"
             | otherwise -> do
-                history %= ([(i, c)] :)
-                cells %= setCells [(i, c & value .~ Just d & notes .~ [])]
-                mistakes += 1
-                lastPlaced .= Just i
-                shakeIx .= Just i
-                animSeq += 1
-                playFx "deny"
+                -- place the digit; only a visible duplicate counts as a
+                -- mistake — disagreeing with the hidden solution does not
+                placeDigitAt i d
+                m' <- get
+                let clash = i `elem` conflicted (map (^. value) (m' ^. cells))
+                if clash
+                  then do
+                    mistakes += 1
+                    shakeIx .= Just i
+                    playFx "deny"
+                  else playFx "clack"
+                checkWin
     _ -> pure ()
   where
     insertSorted x xs = takeWhile (< x) xs ++ [x] ++ dropWhile (< x) xs
 -----------------------------------------------------------------------------
--- | Place the correct digit at @i@: fills the cell, sweeps the digit out
--- of peer pencil marks, records one undo entry, and checks for the win.
-placeCorrect :: Int -> Int -> Fx
-placeCorrect i d = do
+-- | Write digit @d@ into cell @i@, sweep it out of peer pencil marks,
+-- and record one undo entry.
+placeDigitAt :: Int -> Int -> Fx
+placeDigitAt i d = do
   m <- get
   let c = (m ^. cells) !! i
       peerFixes =
@@ -217,13 +244,25 @@ placeCorrect i d = do
   lastPlaced .= Just i
   shakeIx .= Nothing
   animSeq += 1
-  m' <- get
-  when (isWon m') $ do
+-----------------------------------------------------------------------------
+-- | Hints place the digit from the hidden solution.
+placeCorrect :: Int -> Int -> Fx
+placeCorrect i d = do
+  placeDigitAt i d
+  checkWin
+-----------------------------------------------------------------------------
+checkWin :: Fx
+checkWin = do
+  m <- get
+  when (isWon m) $ do
     phase .= Won
     playFx "win"
 -----------------------------------------------------------------------------
+-- | Full and clash-free: with a unique solution this is the solution.
 isWon :: Model -> Bool
-isWon m = map (^. value) (m ^. cells) == map Just (m ^. solution)
+isWon m =
+  all (isJust . (^. value)) (m ^. cells)
+    && null (conflicted (map (^. value) (m ^. cells)))
 -----------------------------------------------------------------------------
 playFx :: MisoString -> Fx
 playFx name = do
@@ -260,8 +299,10 @@ titleView = H.div_ [ HP.class_ "titleWrap" ] $
   , H.div_ [ HP.class_ "titleSub" ] [ text "MISO SUDOKU" ]
   , H.div_ [ HP.class_ "diffRow" ]
       [ H.button_
-          [ HP.class_ "btn", HE.onClick (PickDifficulty d) ]
-          [ text (diffLabel d) ]
+          [ HP.class_ "diffBtn", HE.onClick (PickDifficulty d) ]
+          [ H.span_ [ HP.class_ "diffK" ] [ text (diffKanji d) ]
+          , text (diffLabel d)
+          ]
       | d <- [minBound .. maxBound]
       ]
   , H.button_
@@ -281,6 +322,11 @@ titleView = H.div_ [ HP.class_ "titleWrap" ] $
       Medium -> "MEDIUM"
       Hard -> "HARD"
       Expert -> "EXPERT"
+    diffKanji = \case
+      Easy -> "易"
+      Medium -> "中"
+      Hard -> "難"
+      Expert -> "極"
 -----------------------------------------------------------------------------
 topbar :: Model -> View () Model Action
 topbar m = H.div_ [ HP.class_ "topbar" ]
@@ -317,17 +363,22 @@ boardView m = H.div_ [ HP.class_ "sboard" ]
     selVal = do
       i <- sel
       ((m ^. cells) !! i) ^. value
+    conf = conflicted (map (^. value) (m ^. cells))
     alt = odd (m ^. animSeq)
     won = m ^. phase == Won
     cellView i = H.div_
-      (HP.class_ cls : HE.onClick (SelectCell i) : waveDelay)
+      ( HP.class_ cls
+      : HE.onClick (SelectCell i)
+      : HE.onDragEnter (DragEnterC i)
+      : HE.onDragOverWithOptions preventDefault NoOp
+      : HE.onDropWithOptions preventDefault (DropOnC i)
+      : waveDelay
+      )
       content
       where
         c = (m ^. cells) !! i
         v = c ^. value
-        err = case v of
-          Just d -> not (c ^. given) && (m ^. solution) !! i /= d
-          Nothing -> False
+        inConf = i `elem` conf
         isPeer = case sel of
           Just s -> s /= i &&
             (rowOf s == rowOf i || colOf s == colOf i || boxOf s == boxOf i)
@@ -338,12 +389,14 @@ boardView m = H.div_ [ HP.class_ "sboard" ]
           , clsWhen (rowOf i `elem` [2, 5]) "b3b"
           , clsWhen (c ^. given) "gv"
           , clsWhen (not (c ^. given) && isJust v) "us"
-          , clsWhen err "er"
+          , clsWhen (inConf && not (c ^. given)) "er"
+          , clsWhen (inConf && c ^. given) "clash"
           , clsWhen (sel == Just i) "sel"
           , clsWhen (isPeer && not won) "peer"
           , clsWhen (isJust v && v == selVal && sel /= Just i && not won) "same"
           , clsWhen (m ^. shakeIx == Just i) "shakeC"
           , clsWhen (m ^. shakeIx == Just i && alt) "alt"
+          , clsWhen (m ^. dragOver == Just i && isJust (m ^. dragDigit)) "dropTarget"
           , clsWhen won "winWave"
           ]
         waveDelay =
@@ -367,8 +420,15 @@ padView :: Model -> View () Model Action
 padView m = H.div_ [ HP.class_ "pad" ]
   [ H.div_ [ HP.class_ "digits" ]
       [ H.button_
-          [ HP.class_ ("digBtn" <> (if left d <= 0 then " done" else ""))
+          [ HP.class_ $ joinCls
+              [ "digBtn"
+              , clsWhen (left d <= 0) "done"
+              , clsWhen (m ^. dragDigit == Just d) "dragging"
+              ]
+          , HP.draggable_ True
           , HE.onClick (Enter d)
+          , HE.onDragStart (DragStartD d)
+          , HE.onDragEnd DragEndD
           ]
           [ text (ms d)
           , H.small_ [] [ text (ms (max 0 (left d))) ]
@@ -380,11 +440,14 @@ padView m = H.div_ [ HP.class_ "pad" ]
           (if m ^. notesMode then "ctrlBtn on" else "ctrlBtn")
           ("✏️ notes" <> (if m ^. notesMode then " ON" else ""))
       , ctrl Erase "ctrlBtn" "⌫ erase"
-      , ctrl Hint "ctrlBtn" "💡 hint"
+      , ctrl Hint
+          (if hintsLeft <= 0 then "ctrlBtn off" else "ctrlBtn")
+          ("💡 hint ·" <> ms hintsLeft)
       , ctrl Undo "ctrlBtn" "↩ undo"
       ]
   ]
   where
+    hintsLeft = max 0 (hintLimit - m ^. hintsUsed)
     left d = 9 - length [ () | c <- m ^. cells, c ^. value == Just d ]
     ctrl act cls label =
       H.button_ [ HP.class_ cls, HE.onClick act ] [ text label ]
@@ -392,8 +455,9 @@ padView m = H.div_ [ HP.class_ "pad" ]
 winOverlay :: Model -> View () Model Action
 winOverlay m = H.div_ [ HP.class_ "overlay" ]
   [ H.div_ [ HP.class_ "panel" ]
-      [ H.div_ [ HP.class_ "winTitle" ] [ text "SOLVED!" ]
-      , H.div_ [ HP.class_ "winSub" ] [ text "the grid is complete ✨" ]
+      [ H.div_ [ HP.class_ "seal" ] [ text "正解" ]
+      , H.div_ [ HP.class_ "winTitle" ] [ text "SOLVED" ]
+      , H.div_ [ HP.class_ "winSub" ] [ text "graded by the red pen — correct" ]
       , statRow 0 "Difficulty" (difficultyName (m ^. difficulty))
       , statRow 1 "Time" (formatTime (m ^. timeSec))
       , statRow 2 "Mistakes" (ms (m ^. mistakes))
@@ -422,21 +486,26 @@ helpOverlay = H.div_ [ HP.class_ "overlay help" ]
           <> "puzzle starts with some digits given — they never move."
       , sec "CONTROLS"
       , para $
-          "Tap a cell, then tap a digit (or type 1–9). Tapping the same "
-          <> "digit again clears it. Turn on ✏️ notes to jot small candidate "
-          <> "digits into empty cells — placing a real digit sweeps that "
-          <> "digit out of the notes around it. Arrow keys move, backspace "
-          <> "erases, N toggles notes."
+          "Drag a digit from the pad onto a cell, or tap a cell and then "
+          <> "a digit (or type 1–9). Entering the same digit again clears "
+          <> "it. Turn on ✏️ notes to jot small candidate digits into empty "
+          <> "cells — placing a real digit sweeps that digit out of the "
+          <> "notes around it. Arrow keys move, backspace erases, N "
+          <> "toggles notes."
       , sec "READING THE BOARD"
-      , legend "7" "gvL" "given digits — fixed"
-      , legend "4" "usL" "your digits"
-      , legend "9" "erL" "a mistake — it disagrees with the solution"
+      , legend "7" "gvL" "printed digits — the givens, fixed"
+      , legend "4" "usL" "your digits, in pencil"
+      , legend "9" "erL" "marked in red — it duplicates a digit it can see"
+      , para $
+          "Only visible clashes get the red pen. A digit that merely "
+          <> "disagrees with the hidden solution is left alone — you'll "
+          <> "meet it later."
       , sec "HELPERS"
       , para $
-          "💡 hint fills the selected (or first unsolved) cell correctly · "
-          <> "↩ undo rewinds as far as you like · every puzzle is generated "
-          <> "with exactly one solution, and the clock pauses while you "
-          <> "read this."
+          "💡 hint fills the selected (or first unsolved) cell correctly — "
+          <> "you get three per game · ↩ undo rewinds as far as you like · "
+          <> "every puzzle is generated with exactly one solution, and the "
+          <> "clock pauses while you read this."
       , H.button_ [ HP.class_ "btn", HE.onClick CloseHelp ] [ text "GOT IT" ]
       ]
   ]

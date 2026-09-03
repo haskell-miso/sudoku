@@ -7,7 +7,7 @@
     <title>Sudoku — Free Online Puzzle · Miso Sudoku</title>
     <meta name="description" content="Play sudoku free in your browser. Four difficulties, every puzzle generated with exactly one solution. Pencil notes, hints, undo, mistake tracking. No ads, no download, works on mobile.">
     <link rel="canonical" href="https://sudoku.haskell-miso.org/">
-    <meta name="theme-color" content="#0f4736">
+    <meta name="theme-color" content="#1B2440">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔢</text></svg>">
 
     <!-- Open Graph -->
@@ -29,6 +29,10 @@
 
     <!-- Performance -->
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@500;600;700&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@700&text=%E6%95%B0%E7%8B%AC%E6%AD%A3%E8%A7%A3%E6%98%93%E4%B8%AD%E9%9B%A3%E6%A5%B5&display=swap">
     <link rel="modulepreload" href="index.js">
     <link rel="modulepreload" href="ghc_wasm_jsffi.js">
     <link rel="preload" href="app.wasm" as="fetch" crossorigin="anonymous">
@@ -58,22 +62,24 @@
     </script>
 
     <style>
-      html, body { margin: 0; padding: 0; background: #082b20; }
+      html, body { margin: 0; padding: 0; background: #131A2E; }
       #loading {
         position: fixed; inset: 0; display: flex; flex-direction: column;
         align-items: center; justify-content: center; text-align: center;
-        gap: 10px; padding: 24px; color: #cfe0d5;
+        gap: 10px; padding: 24px; color: #B8C2D8;
         font-family: 'Avenir Next', 'Segoe UI', system-ui, sans-serif;
         background:
-          radial-gradient(120% 90% at 50% 12%, rgba(255,255,255,.07), rgba(0,0,0,0) 55%),
-          radial-gradient(140% 120% at 50% 50%, #17604a 0%, #0f4736 48%, #082b20 100%);
+          radial-gradient(120% 90% at 50% 10%, rgba(255,255,255,.05), rgba(0,0,0,0) 55%),
+          linear-gradient(180deg, #26324E 0%, #1B2440 55%, #131A2E 100%);
       }
       #loading h1 {
-        margin: 0; color: #e8c96a; font-size: clamp(28px, 6vmin, 48px);
-        letter-spacing: .12em; font-weight: 800;
+        margin: 0; color: #F7F5EE; font-size: clamp(28px, 6vmin, 48px);
+        letter-spacing: .12em; font-weight: 700;
+        font-family: 'Zilla Slab', Georgia, serif;
+        border-bottom: 3px solid rgba(199,62,58,.9); padding-bottom: 8px;
       }
       #loading p { max-width: 560px; line-height: 1.6; margin: 4px 0; font-size: 15px; }
-      #loading .dim { color: #7f9a8c; font-size: 13px; }
+      #loading .dim { color: #64718F; font-size: 13px; }
       #loading .pulse { animation: lpulse 1.2s ease-in-out infinite; }
       @keyframes lpulse { 0%, 100% { opacity: .45 } 50% { opacity: 1 } }
     </style>
