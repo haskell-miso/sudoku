@@ -21,6 +21,7 @@ executable app
   other-modules:        Model
                         Logic
                         Sound
+                        Drag
                         Styles
   build-depends:        base, containers, miso, mtl
   ghc-options:          -Wall

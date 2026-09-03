@@ -219,9 +219,20 @@ skin = sheet_
       , CSS.cursor "grab"
       , CSS.boxShadow "0 2px 0 #d9d5c6, 0 6px 14px rgba(8,12,26,.45)"
       , CSS.transition "transform .15s cubic-bezier(.2,.9,.3,1.4), box-shadow .15s ease, opacity .2s ease"
-      , "touch-action" =: "manipulation"
+      , "touch-action" =: "none" -- the pad chips are drag sources
       ]
   , selector_ ".digBtn:active" [ CSS.cursor "grabbing", CSS.transform "translateY(1px) scale(.97)" ]
+  , selector_ ".dragGhost"
+      [ CSS.position "fixed"
+      , CSS.zIndex 200
+      , CSS.width "58px"
+      , CSS.margin "0"
+      , CSS.pointerEvents "none"
+      , CSS.transform "translate(-50%, -65%) rotate(4deg) scale(1.06)"
+      , CSS.opacity 0.92
+      , CSS.boxShadow "0 18px 34px rgba(8,12,26,.6)"
+      , CSS.transition "none"
+      ]
   , selector_ ".digBtn small"
       [ CSS.position "absolute"
       , "inset" =: "auto 0 4px 0"

@@ -45,8 +45,6 @@ data Model = Model
   , _lastPlaced :: Maybe Int -- ^ cell that just received a value
   , _shakeIx    :: Maybe Int -- ^ cell shaking after a wrong entry
   , _heldKeys   :: IntSet    -- ^ previous keyboard state, for edge detect
-  , _dragDigit  :: Maybe Int -- ^ digit being dragged off the pad
-  , _dragOver   :: Maybe Int -- ^ cell hovered as the drop target
   } deriving (Eq, Show)
 -----------------------------------------------------------------------------
 makeLenses ''Model
@@ -64,10 +62,6 @@ data Action
   | Undo
   | MoveSel Int Int
   | Keys IntSet
-  | DragStartD Int
-  | DragEndD
-  | DragEnterC Int
-  | DropOnC Int
   | Tick
   | ToggleSound
   | ShowHelp
@@ -91,8 +85,6 @@ initialModel = Model
   , _lastPlaced = Nothing
   , _shakeIx    = Nothing
   , _heldKeys   = IS.empty
-  , _dragDigit  = Nothing
-  , _dragOver   = Nothing
   }
 -----------------------------------------------------------------------------
 -- | Hints available per game.

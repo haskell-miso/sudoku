@@ -16,13 +16,14 @@ import qualified Miso.Html.Element as H
 import qualified Miso.Html.Event as HE
 import qualified Miso.Html.Property as HP
 -----------------------------------------------------------------------------
+import           Drag
 import           Logic
 import           Model
 import           Sound
 import           Styles (skin)
 -----------------------------------------------------------------------------
 main :: IO ()
-main = startApp (defaultEvents <> dragEvents) app
+main = startApp defaultEvents app
 -----------------------------------------------------------------------------
 app :: App Model Action
 app = (component initialModel updateModel viewModel)
@@ -57,6 +58,7 @@ updateModel = \case
 
   PickDifficulty d -> do
     io_ soundInit
+    io_ dragInit
     io $ do
       (sol, puz) <- generateIO d
       pure (PuzzleReady sol puz d)
@@ -149,27 +151,6 @@ updateModel = \case
     heldKeys .= ks
     mapM_ (issueKey (m ^. showHelp)) fresh
 
-  DragStartD d -> do
-    m <- get
-    when (m ^. phase == Playing) (dragDigit .= Just d)
-
-  DragEndD -> do
-    dragDigit .= Nothing
-    dragOver .= Nothing
-
-  DragEnterC i -> do
-    m <- get
-    when (isJust (m ^. dragDigit)) (dragOver .= Just i)
-
-  DropOnC i -> do
-    m <- get
-    case m ^. dragDigit of
-      Just d | m ^. phase == Playing -> do
-        selected .= Just i
-        dragDigit .= Nothing
-        dragOver .= Nothing
-        enterDigit d
-      _ -> pure ()
 -----------------------------------------------------------------------------
 issueKey :: Bool -> Int -> Fx
 issueKey helpOpen k
@@ -369,9 +350,6 @@ boardView m = H.div_ [ HP.class_ "sboard" ]
     cellView i = H.div_
       ( HP.class_ cls
       : HE.onClick (SelectCell i)
-      : HE.onDragEnter (DragEnterC i)
-      : HE.onDragOverWithOptions preventDefault NoOp
-      : HE.onDropWithOptions preventDefault (DropOnC i)
       : waveDelay
       )
       content
@@ -396,7 +374,6 @@ boardView m = H.div_ [ HP.class_ "sboard" ]
           , clsWhen (isJust v && v == selVal && sel /= Just i && not won) "same"
           , clsWhen (m ^. shakeIx == Just i) "shakeC"
           , clsWhen (m ^. shakeIx == Just i && alt) "alt"
-          , clsWhen (m ^. dragOver == Just i && isJust (m ^. dragDigit)) "dropTarget"
           , clsWhen won "winWave"
           ]
         waveDelay =
@@ -420,15 +397,8 @@ padView :: Model -> View () Model Action
 padView m = H.div_ [ HP.class_ "pad" ]
   [ H.div_ [ HP.class_ "digits" ]
       [ H.button_
-          [ HP.class_ $ joinCls
-              [ "digBtn"
-              , clsWhen (left d <= 0) "done"
-              , clsWhen (m ^. dragDigit == Just d) "dragging"
-              ]
-          , HP.draggable_ True
+          [ HP.class_ (joinCls [ "digBtn", clsWhen (left d <= 0) "done" ])
           , HE.onClick (Enter d)
-          , HE.onDragStart (DragStartD d)
-          , HE.onDragEnd DragEndD
           ]
           [ text (ms d)
           , H.small_ [] [ text (ms (max 0 (left d))) ]
