@@ -252,8 +252,8 @@ playFx name = do
 -----------------------------------------------------------------------------
 -- * View
 -----------------------------------------------------------------------------
-viewModel :: () -> () -> Model -> View () Model Action
-viewModel _ _ m = case m ^. phase of
+viewModel :: Model -> View () () Model Action
+viewModel m = case m ^. phase of
   Title -> H.div_ []
     ( titleView : [ helpOverlay | m ^. showHelp ] )
   _ -> H.div_ []
@@ -264,7 +264,7 @@ viewModel _ _ m = case m ^. phase of
       ++ [ helpOverlay | m ^. showHelp ]
     )
 -----------------------------------------------------------------------------
-titleView :: View () Model Action
+titleView :: View () () Model Action
 titleView = H.div_ [ HP.class_ "titleWrap" ] $
   [ deco v x y r dl
   | (v, x, y, r, dl) <-
@@ -309,7 +309,7 @@ titleView = H.div_ [ HP.class_ "titleWrap" ] $
       Hard -> "難"
       Expert -> "極"
 -----------------------------------------------------------------------------
-topbar :: Model -> View () Model Action
+topbar :: Model -> View () () Model Action
 topbar m = H.div_ [ HP.class_ "topbar" ]
   [ H.div_ [ HP.class_ "brand" ]
       [ text "MISO SUDOKU "
@@ -336,7 +336,7 @@ topbar m = H.div_ [ HP.class_ "topbar" ]
       , H.span_ [ HP.class_ "btnLabel" ] [ text (" " <> label) ]
       ]
 -----------------------------------------------------------------------------
-boardView :: Model -> View () Model Action
+boardView :: Model -> View () () Model Action
 boardView m = H.div_ [ HP.class_ "sboard" ]
   [ H.div_ [ HP.class_ "sgrid" ] (map cellView [0 .. 80]) ]
   where
@@ -395,7 +395,7 @@ boardView m = H.div_ [ HP.class_ "sboard" ]
             | not (null (c ^. notes))
             ]
 -----------------------------------------------------------------------------
-padView :: Model -> View () Model Action
+padView :: Model -> View () () Model Action
 padView m = H.div_ [ HP.class_ "pad" ]
   [ H.div_ [ HP.class_ "digits" ]
       [ H.button_
@@ -424,7 +424,7 @@ padView m = H.div_ [ HP.class_ "pad" ]
     ctrl act cls label =
       H.button_ [ HP.class_ cls, HE.onClick act ] [ text label ]
 -----------------------------------------------------------------------------
-winOverlay :: Model -> View () Model Action
+winOverlay :: Model -> View () () Model Action
 winOverlay m = H.div_ [ HP.class_ "overlay" ]
   [ H.div_ [ HP.class_ "panel" ]
       [ H.div_ [ HP.class_ "seal" ] [ text "正解" ]
@@ -438,14 +438,14 @@ winOverlay m = H.div_ [ HP.class_ "overlay" ]
       ]
   ]
   where
-    statRow :: Int -> MisoString -> MisoString -> View () Model Action
+    statRow :: Int -> MisoString -> MisoString -> View () () Model Action
     statRow k label v = H.div_
       [ HP.class_ "statRow"
       , CSS.style_ [ CSS.animationDelay (ms (200 + k * 130) <> "ms") ]
       ]
       [ H.span_ [] [ text label ], H.b_ [] [ text v ] ]
 -----------------------------------------------------------------------------
-helpOverlay :: View () Model Action
+helpOverlay :: View () () Model Action
 helpOverlay = H.div_ [ HP.class_ "overlay help" ]
   [ H.div_ [ HP.class_ "panel helpPanel" ]
       [ H.button_ [ HP.class_ "helpClose", HE.onClick CloseHelp ] [ text "✕" ]
